@@ -1,0 +1,85 @@
+<html>
+<head>
+    <style>
+        .col20p{
+            width: 20%;
+        }
+        .col80p{
+            width: 80%;
+        }
+        .col20p,
+        .col80p{
+            padding: 5px;
+            -moz-box-sizing: border-box; 
+            -webkit-box-sizing: border-box; 
+            box-sizing: border-box;
+        }
+        .row{
+            margin: 0 -5px;
+        }
+        .chat-box{
+            width: 100%;
+            border: 5px solid #EDEDED;
+            float: left;
+            -moz-box-sizing: border-box; 
+            -webkit-box-sizing: border-box; 
+            box-sizing: border-box;
+        }
+        .user-online{
+            width: 100%;
+            border: 5px solid #EDEDED;
+            float: left;
+            -moz-box-sizing: border-box; 
+            -webkit-box-sizing: border-box; 
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+<center><h1>WELLCOME TO CHAT ROOM</h1></center>
+<div class="row">
+    <div class="col80p">
+        <div class="chat-box">
+
+        </div>
+    </div>
+    <div class="col20p">
+        <div id="user-online" class="user-online">
+            <div class="user-list" id="user-list">
+                <div class="item" id="test">
+                    <p>test</p>
+                </div>
+                <div class="item" id="test">
+                    <p>test</p>
+                </div>
+                <div class="item" id="test">
+                    <p>test</p>
+                </div>
+                <% for(var i=0; i<userOnline.length; i++){ %>
+                <div class="item" id="<%= userOnline[i].name %>">
+                    <p><%= userOnline[i].name %></p>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+<script>
+
+    var socket = io("http://localhost:3000");
+    socket.on("chat", function(data){
+        console.log(data)
+    });
+    socket.on("hasConnect", function(data){
+        $("#user-list").append(`<div class="item" id="${data.name}"><p>${data.name}</p></div>`)
+    })
+    socket.on("hasDisconnect", function(data){
+        $("#user-list").remove(`#${data.name}`)
+    })
+    /*socket.emit("init", "connect");*/
+</script>
+</html>
