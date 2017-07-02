@@ -9,6 +9,7 @@
         }
         .col20p,
         .col80p{
+            float: left;
             padding: 5px;
             -moz-box-sizing: border-box; 
             -webkit-box-sizing: border-box; 
@@ -17,10 +18,9 @@
         .row{
             margin: 0 -5px;
         }
-        .chat-box{
+        .chat-content{
             width: 100%;
             border: 5px solid #EDEDED;
-            float: left;
             -moz-box-sizing: border-box; 
             -webkit-box-sizing: border-box; 
             box-sizing: border-box;
@@ -39,8 +39,16 @@
 <center><h1>WELLCOME TO CHAT ROOM</h1></center>
 <div class="row">
     <div class="col80p">
-        <div class="chat-box">
+        <div id="chat-content" class="chat-content active">
+            <div class="chat-name">
+                <p></p>
+            </div>
+            <div class="chat-message">
 
+            </div>
+            <div class="chat-input">
+                <input type="text" name="" id="message-input" /><button id="send">Send</button>
+            </div>
         </div>
     </div>
     <div class="col20p">
@@ -69,17 +77,62 @@
 <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
 <script>
-
+    var current = null
+    var userOnline = []
     var socket = io("http://localhost:3000");
-    socket.on("chat", function(data){
+
+    $("#send").on("click", () => {
+        var el = $("#chat-content > .chat-input > #message-input")
+        var name = el.attr("name").toString()
+        var message = el.val()
+        const data = {
+            name: name,
+            message: message
+        }
+        socket.emit("message", data)
+    })
+    const setChatBox = (user) => {
+        current = user.name
+        $("#chat-content > .chat-name > p").html(user.name)
+        $("#chat-content > .chat-input > #message-input").attr("name", user.name)
+    }
+    
+    socket.on("new-message", (data) => {
         console.log(data)
     });
     socket.on("hasConnect", function(data){
+        userOnline.push(data)
+        if(!current){
+            setChatBox(userOnline[0])
+        }
         $("#user-list").append(`<div class="item" id="${data.name}"><p>${data.name}</p></div>`)
     })
-    socket.on("hasDisconnect", function(data){
-        $("#user-list").remove(`#${data.name}`)
+    socket.on("hasDisconnect", (data) => {
+        const removeIndex = userOnline.findIndex((user) => {
+            return user.name == data.name
+        })
+        userOnline.splice(removeIndex, 1)
+        $(`#user-list > #${data.name}`).remove()
+        if(userOnline.length > 0){
+            if(current = data.name){
+                setChatBox(userOnline[0])
+            }     
+        }else{
+            $("#chat-content").addClass("active")
+        }
+              
     })
+    socket.on("receiveUser", (data) => {
+        userOnline = data.map((user) => {
+            user.message = []
+            return user
+        })
+        if(userOnline.length > 0){
+            $("#chat-content").removeClass("active")
+            setChatBox(userOnline[0])
+        }
+    })
+    socket.emit("getUserOnline", "")
     /*socket.emit("init", "connect");*/
 </script>
 </html>
