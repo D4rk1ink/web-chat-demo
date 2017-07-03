@@ -18,12 +18,28 @@
         .row{
             margin: 0 -5px;
         }
+        .friend-message{
+            text-align: left;
+        }
+        .my-message{
+            text-align: right;
+        }
         .chat-content{
             width: 100%;
             border: 5px solid #EDEDED;
             -moz-box-sizing: border-box; 
             -webkit-box-sizing: border-box; 
             box-sizing: border-box;
+        }
+        .chat-content>.chat-name{
+            padding: 5px;
+            font-size: 30px;
+            font-weight: bold;
+            background-color: #EDEDED
+        }
+        .chat-content>.chat-message{
+            min-height: 300px;
+            overflow-y: scroll;
         }
         .user-online{
             width: 100%;
@@ -41,10 +57,9 @@
     <div class="col80p">
         <div id="chat-content" class="chat-content active">
             <div class="chat-name">
-                <p></p>
+                
             </div>
             <div class="chat-message">
-
             </div>
             <div class="chat-input">
                 <input type="text" name="" id="message-input" /><button id="send">Send</button>
@@ -54,12 +69,6 @@
     <div class="col20p">
         <div id="user-online" class="user-online">
             <div class="user-list" id="user-list">
-                <div class="item" id="test">
-                    <p>test</p>
-                </div>
-                <div class="item" id="test">
-                    <p>test</p>
-                </div>
                 <div class="item" id="test">
                     <p>test</p>
                 </div>
@@ -81,26 +90,62 @@
     var userOnline = []
     var socket = io("http://localhost:3000");
 
+    const findUserIndex = (name) => {
+        return userOnline.findIndex((user) => {
+            return user.name == name
+        })
+    }
+    const addMessage = (name, data) => {
+        const index = findUserIndex(name)
+        console.log(index)
+        console.log(userOnline[index])
+        userOnline[index].message.push(data)
+    }
+    const writeMyMessage = (message) => {
+        $("#chat-content>.chat-message").append(`<p class="my-message">${message}</p>`)
+    }
+    const writeFriendMessage = (message) => {
+        $("#chat-content>.chat-message").append(`<p class="friend-message">${message}</p>`)
+    }
+    const setChatBox = (user) => {
+        current = user.name
+        $("#chat-content>.chat-name").html(user.name)
+        $("#chat-content>.chat-message").empty()
+        if(user.message.length > 0){
+            console.log(user.message)
+            user.message.forEach((item) => {
+                if(item.name == "me"){
+                    writeMyMessage(item.message)
+                }else{
+                    writeFriendMessage(item.message)
+                }
+            })
+        }
+        $("#chat-content>.chat-input>#message-input").val("")
+        $("#chat-content>.chat-input>#message-input").attr("name", user.name)
+    }
     $("#send").on("click", () => {
-        var el = $("#chat-content > .chat-input > #message-input")
+        var el = $("#chat-content>.chat-input>#message-input")
         var name = el.attr("name").toString()
         var message = el.val()
+        el.val("")
         const data = {
             name: name,
             message: message
         }
+        addMessage(name, { name: "me", message: message})
         socket.emit("message", data)
+        writeMyMessage(message)
     })
-    const setChatBox = (user) => {
-        current = user.name
-        $("#chat-content > .chat-name > p").html(user.name)
-        $("#chat-content > .chat-input > #message-input").attr("name", user.name)
-    }
-    
     socket.on("new-message", (data) => {
-        console.log(data)
+        addMessage(data.name, data)
+        if(data.name == current){
+            writeFriendMessage(data.message)
+        }
+        
     });
     socket.on("hasConnect", function(data){
+        data.message = []
         userOnline.push(data)
         if(!current){
             setChatBox(userOnline[0])
@@ -108,19 +153,16 @@
         $("#user-list").append(`<div class="item" id="${data.name}"><p>${data.name}</p></div>`)
     })
     socket.on("hasDisconnect", (data) => {
-        const removeIndex = userOnline.findIndex((user) => {
-            return user.name == data.name
-        })
+        const removeIndex = findUserIndex(data.name)
         userOnline.splice(removeIndex, 1)
-        $(`#user-list > #${data.name}`).remove()
+        $(`#user-list>#${data.name}`).remove()
         if(userOnline.length > 0){
-            if(current = data.name){
+            if(current == data.name){
                 setChatBox(userOnline[0])
             }     
         }else{
             $("#chat-content").addClass("active")
-        }
-              
+        }      
     })
     socket.on("receiveUser", (data) => {
         userOnline = data.map((user) => {
