@@ -72,6 +72,7 @@
     </style>
 </head>
 <body>
+<%= Array.isArray(userOnline) %>
 <center><h1>WELLCOME TO CHAT ROOM</h1></center>
 <div class="row">
     <div class="col80p">
@@ -105,9 +106,10 @@
 
 <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+
 <script>
     var current = null
-    var userOnline = []
+    var userOnline = <%- JSON.stringify(userOnline) %>
     var socket = io("http://localhost:3000");
 
     const findUserIndex = (name) => {
@@ -130,11 +132,6 @@
             userOnline.push(data)
         }
         updateCountUserOnline()
-        var s = "s"
-        for(var i=0;i<1000000;i++){
-            s += "s"
-        }
-        console.log("loop")
     }
     const removeUser = (name) => {
         const removeIndex = findUserIndex(name)
@@ -167,6 +164,16 @@
         $(".chat-content>.chat-input>#message-input").val("")
         $(".chat-content>.chat-input>#message-input").attr("name", user.name)
     }
+    $(document).ready(() => {
+        userOnline = userOnline.map((user) => {
+                user.message = []
+                return user
+        })
+        if(userOnline.length > 0){
+            $(".chat-content").removeClass("active")
+            setChatBox(userOnline[0])
+        }
+    })
     $(".user-online>.user-list>.item").on("click", (event) => {
         console.log("asdasdasd")
         const name = event.target.id
@@ -211,15 +218,8 @@
         }      
     })
     socket.on("receiveUser", (data) => {
-        addUser(data)
-        console.log("receiveUser")
-        if(userOnline.length > 0){
-            $(".chat-content").removeClass("active")
-            console.log(userOnline[0])
-            setChatBox(userOnline[0])
-        }
+        //addUser(data)
     })
-    socket.emit("getUserOnline", "")
-    /*socket.emit("init", "connect");*/
+    //socket.emit("getUserOnline", "")
 </script>
 </html>
